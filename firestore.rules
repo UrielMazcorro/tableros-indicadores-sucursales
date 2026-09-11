@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función auxiliar para comprobar si el usuario está autenticado
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Función auxiliar para obtener los datos del usuario autenticado
+    function getUserData() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+    }
+    
+    // Función auxiliar para comprobar si el usuario actual es super admin o administrador
+    function isAdmin() {
+      return isAuth() && (getUserData().rol == 'administrador' || getUserData().rol == 'super_admin');
+    }
+
+    // Función auxiliar para comprobar si el usuario es líder regional
+    function isLiderRegional() {
+      return isAuth() && getUserData().rol == 'lider_regional';
+    }
+
+    // Función auxiliar para comprobar si el usuario es líder de zona
+    function isLiderZona() {
+      return isAuth() && getUserData().rol == 'lider_zona';
+    }
+
+    match /usuarios/{userId} {
+      // Un usuario puede leer su propio perfil; super admins, admins, líderes regionales y de zona pueden consultar la lista de usuarios para navegación
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin() || isLiderRegional() || isLiderZona());
+      
+      // Permitir creación si es el propio usuario registrándose por primera vez
+      allow create: if isAuth() && request.auth.uid == userId;
+      
+      // Permitir actualización si es el propio usuario actualizando su perfil/onboarding, o un administrador
+      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
+      
+      // Solo el Super Admin / Administrador puede eliminar usuarios
+      allow delete: if isAuth() && isAdmin();
+    }
+    
+    match /tableros/{sucursalId} {
+      // Un líder de sucursal (rol "usuario") puede leer y escribir si sucursalId coincide con su id_sucursal asignado o su uid
+      // Usuarios con rol "super_admin", "administrador", "lider_regional" o "lider_zona" tienen acceso a tableros
+      allow read, write: if isAuth() && (isAdmin() || isLiderRegional() || isLiderZona() || getUserData().id_sucursal == sucursalId || request.auth.uid == sucursalId);
+    }
+  }
+}

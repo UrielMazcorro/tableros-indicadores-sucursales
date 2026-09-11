@@ -1,0 +1,6 @@
+{
+  "name": "Tableros indicadores sucursales",
+  "description": "Aplicación PWA para gestión financiera y análisis de rentabilidad de múltiples negocios.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

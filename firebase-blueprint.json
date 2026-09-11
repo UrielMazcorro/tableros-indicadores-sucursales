@@ -1,0 +1,59 @@
+{
+  "schema": {
+    "usuarios": {
+      "idField": "uid",
+      "fields": {
+        "uid": "string",
+        "email": "string",
+        "nombre": "string",
+        "rol": "string",
+        "id_sucursal": "string | null",
+        "fechaRegistro": "timestamp"
+      }
+    },
+    "tableros": {
+      "idField": "id_sucursal",
+      "fields": {
+        "id_sucursal": "string",
+        "ventas": "array",
+        "tickets": "array",
+        "indicadores": "map",
+        "checklist": "map",
+        "proyeccion": "map",
+        "calendario": "array",
+        "trimestral": "map",
+        "exagregadores": "array",
+        "directorio": "array",
+        "lastUpdated": "timestamp"
+      }
+    }
+  },
+  "securityRules": [
+    {
+      "collection": "usuarios",
+      "rules": [
+        {
+          "allow": ["read"],
+          "condition": "request.auth != null && (request.auth.uid == resource.id || get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == 'administrador')"
+        },
+        {
+          "allow": ["create"],
+          "condition": "request.auth != null && request.auth.uid == resource.id"
+        },
+        {
+          "allow": ["update", "delete"],
+          "condition": "request.auth != null && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == 'administrador'"
+        }
+      ]
+    },
+    {
+      "collection": "tableros",
+      "rules": [
+        {
+          "allow": ["read", "write"],
+          "condition": "request.auth != null && (get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == 'administrador' || get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.id_sucursal == resource.id)"
+        }
+      ]
+    }
+  ]
+}
